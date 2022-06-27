@@ -1,0 +1,17 @@
+#!/usr/bin/env bash 
+
+function run-cmd() {
+    local tag="${1}.run-command"
+    local force=$2
+    local cmd="${@:3}"
+
+    verbose "${tag}" "Running command: ${cmd}"
+    local msg=$(${cmd} 2>&1)
+    local retval=$?
+    if [[ "${force}" -eq true && $retval != 0 ]];then
+        err "${tag}" "Error occur when running command: $msg"
+        exit 1
+    else
+        verbose "${tag}" "Result: ${msg}"
+    fi
+}
