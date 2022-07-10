@@ -1,27 +1,10 @@
 #!/usr/bin/env bash 
 
-#set -o errexit  # script exit when a command fails
-#set -o pipefail # exit status of the last command that threw a non-zero exit code is returned
-
-# function traperr
-# {
-#     echo 2>&1 "\033[31;1mERROR:\033[m ${BASH_SOURCE[1]} FAILED at about line ${BASH_LINENO[0]}"
-#     trap "" ERR SIGINT EXIT
-#     exit 1
-# }
-# trap traperr ERR
-# trap 'echo 1>&2 "\033[31;1mERROR\033[m $0 interrupted!"; exit 1' SIGHUP SIGINT SIGQUIT
-
-
-: '
-Logging function
-'
-
-declare -A log_levels=([VERBOSE]=0 [DEBUG]=1 [INFO]=2 [WARN]=3 [ERROR]=4)
+declare -a log_levels=([VERBOSE]=0 [DEBUG]=1 [INFO]=2 [WARN]=3 [ERROR]=4)
 ROOT_DIR=$(dirname $BASH_SOURCE)
-LOG_DIR="${ROOT_DIR}/logs/"
+LOGFILE="${ROOT_DIR}/logs/"
 
-function logging() {
+function console-logger() {
     local level=""
     local tag=""
     while [ $# -gt 0 ]; do
@@ -35,24 +18,6 @@ function logging() {
                 tag=$2
                 shift
                 shift
-                ;;
-            -h|--help)
-                cat <<HELPEOF
-
-NAME
-    Print log function
-SYNOPSIS
-    logging [-l level] [-t tag] [-h] message
-DESCRIPTION
-    Required arguments:
-    -l level
-    Level of log. level: info|INFO, debug|DEBUG, warn|WARN, error|ERROR, varbose|VERBOSE
-
-    Mandatory arguments:
-    -t Add tag to log.
-
-HELPEOF
-                exit 0
                 ;;
             *)
                 break
@@ -85,6 +50,58 @@ HELPEOF
         printf '[\e[1;34m%s\e[m] ' "${tag}"
     fi
     printf '%s\n' "${@}"
+}
+
+function file-logger() {
+    local level=""
+    local tag=""
+    local file="/dev/null"
+    local msg=""
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            -l)
+                level=$2
+                shift
+                shift
+                ;;
+            -t)
+                tag=$2
+                shift
+                shift
+                ;;
+            -f)
+                file=$2
+                shift
+                shift
+                ;;
+            *)
+                break
+                ;;
+        esac
+    done
+    # Printing...
+    local dt="$(date +"%F %H:%M:%S")"
+    case $level in
+        error|ERROR)
+            msg="${dt} ERROR   "
+            ;;
+        warn|WARN)
+            msg="${dt} WARN    "
+            ;;
+        info|INFO)
+            msg="${dt} INFO    "
+            ;;
+        debug|DEBUG)
+            msg="${dt} DEBUG   "
+            ;;
+        verbose|VERBOSE)
+            msg="${dt} VERBOSE "
+            ;;
+        *)
+            msg="${dt} INFO    "
+            ;;
+    esac
+    echo "${msg} [${tag}] ${@}" >> "${file}"
 }
 
 
@@ -158,9 +175,10 @@ HELPEOF
     fi
     # [VERBOSE]=0 [DEBUG]=1 [INFO]=2 [WARN]=3 [ERROR]=4
     if [[ -n "${LOGGER_LVL}" ]] && [[ ${log_levels[$level]} -lt ${log_levels[$LOGGER_LVL]} ]];then
-        logging -l $level -t $tag "${@}" >> "${log_file}"
+        file-logger -l $level -t $tag -f "${log_file}" "${@}" 
     else
-        logging -l $level -t $tag "${@}" | tee -a "${log_file}"
+        console-logger -l $level -t $tag "${@}"
+        file-logger -l $level -t $tag -f "${log_file}" "${@}" 
     fi
 }
 
@@ -284,5 +302,3 @@ HELPEOF
         export LOGGER_LVL=$level
     fi
 }
-
-setup_logger -l "INFO" -t "main" -f "${LOG_DIR}"
