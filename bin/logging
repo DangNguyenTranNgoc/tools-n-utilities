@@ -1,8 +1,6 @@
-#!/usr/bin/env bash 
+#!/usr/bin/env bash
 
-declare -a log_levels=([VERBOSE]=0 [DEBUG]=1 [INFO]=2 [WARN]=3 [ERROR]=4)
-ROOT_DIR=$(dirname $BASH_SOURCE)
-LOGFILE="${ROOT_DIR}/logs/"
+declare -A log_levels=( [VERBOSE]=0 [DEBUG]=1 [INFO]=2 [WARN]=3 [ERROR]=4 )
 
 function console-logger() {
     local level=""
@@ -301,4 +299,5 @@ HELPEOF
     if [[ -n "${level}" && ${log_levels[$level]} ]];then
         export LOGGER_LVL=$level
     fi
+    info "setup-logger" "Log file [${file}]; Log level [${level}]"
 }

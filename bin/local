@@ -1,4 +1,4 @@
-#!/usr/bin/env bash 
+#!/usr/bin/env bash
 
 function run-cmd() {
     local tag="${1}.run-command"
@@ -15,4 +15,3 @@ function run-cmd() {
         verbose "${tag}" "Result: ${msg}"
     fi
 }
-
